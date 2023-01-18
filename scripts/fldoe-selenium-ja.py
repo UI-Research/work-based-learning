@@ -3,11 +3,13 @@ import json
 import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.service import Service
+# from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 import time
-from webdriver_manager.firefox import GeckoDriverManager
+# from webdriver_manager.firefox import GeckoDriverManager
+from webdriver_manager.chrome import ChromeDriverManager
 
 def click_button(identifier, by=By.XPATH, timeout=15):   
     '''
@@ -49,7 +51,7 @@ def select_dropdown(identifier, by=By.XPATH, value=None, index=None):
         Select(element).select_by_value(value)
     else:
         Select(element).select_by_index(index)
-
+    print('selected!')
 
 ### Get key value pairs to construct course json file
 def get_kv(form):
@@ -97,11 +99,14 @@ def get_course_info(course_link, go_back=1):
     '''
     # Click on course
     course_id = course_link.get_attribute('id')
-    course_link_clickable = EC.element_to_be_clickable((By.ID, course_id))
-    WebDriverWait(driver, timeout=15).until(course_link_clickable)
-    course_link.click()
-
-    form = driver.find_element("xpath", "/html/body/form/div[3]/table/tbody/tr[3]/td/div/div[3]/div/div[3]/div[2]/div/div[2]/div")
+    click_button(course_id, by=By.ID)
+    # Wait until HTML panel housing the course information is loaded on the page
+    try:
+        course_panel_loaded = EC.presence_of_element_located((By.XPATH, '//*[@id="ContentPlaceHolder1_pnlTabCollectionDiscipline"]/div/div[2]'))
+        WebDriverWait(driver, timeout=15).until(course_panel_loaded)
+    except:
+        print('Couldn\'t find element')
+    form = driver.find_element('xpath', '//*[@id="ContentPlaceHolder1_pnlTabCollectionDiscipline"]/div/div[2]') #/div")
     dict = {}
     dict = get_kv(form)
     kv_to_json(dict)
@@ -125,9 +130,9 @@ def get_discipline_courses(discipline_link, discipline_number, skip_to_end=False
     '''
     # Click on the discipline link
     discipline_id = discipline_link.get_attribute('id')
-    discipline_link_clickable = EC.element_to_be_clickable((By.ID, discipline_id))
-    WebDriverWait(driver, timeout=15).until(discipline_link_clickable)
-    discipline_link.click()
+    click_button(discipline_id, by=By.ID)
+    # Check to make sure we've navigated to the course page
+    # on_course_page = EC.
     # Grab all the course links
     select_dropdown(identifier='//*[@id="ContentPlaceHolder1_ddlPageSize"]', value='500')
     
@@ -157,6 +162,10 @@ def get_discipline_courses(discipline_link, discipline_number, skip_to_end=False
         print(f'{n_course_links} courses on this page')
         # Iterate over all the courses on that page, calling get_course_info() for each one
         for j in range(n_course_links):
+            # Take break every 15 links to give page chance to reload
+            if j % 15 == 14:
+                print('Sleeping for 30 seconds')
+                time.sleep(30)
             # if block only needed if you don't want to start with the first course on a page
             if skip_to_end and j < n_course_links - 1:
                 continue
@@ -174,30 +183,34 @@ def get_discipline_courses(discipline_link, discipline_number, skip_to_end=False
         try:
             click_button(identifier=f'//*[@id="ContentPlaceHolder1_gvCoursesGridview"]/tbody/tr[502]/td/table/tbody/tr/td[{current_page}]/a', timeout=10)
             print(f'Proceeding to page {current_page}')
-            time.sleep(5)
+            print('Sleeping for 60 seconds')
+            time.sleep(60)
+            
 
         except:
             print(f'There is no page {current_page}, resetting filters')
             more_pages = False
             click_button(identifier='//*[@id="ContentPlaceHolder1_cmdResetFilters"]')
-            time.sleep(30) # Let the website rest a little before moving to next discipline :D
+            print('Sleeping for 60 seconds')
+            time.sleep(60)
+            
 
 
 if __name__ == '__main__':
     # Can tweak this parameter based on how many disciplines have been successfully scraped
-    START_DISCIPLINE = 2
+    START_DISCIPLINE = 14
 
     # Home page url
     url = "https://flscns.fldoe.org/Default.aspx"
-    service = Service(executable_path=GeckoDriverManager().install())
-    driver = webdriver.Firefox(service=service)
+    service = Service(executable_path=ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service)
     driver.get(url)
 
     # Go to find an institution course  
     click_button(identifier='//*[@id="content"]/nav/div[1]/div/ul/li[2]/a')
     click_button(identifier='//*[@id="dropdownmenu1"]/li[2]/a')
     # Load all disciplines in one page
-    select_dropdown(identifier='//*[@id="ContentPlaceHolder1_ddlPageSize"]', value='200')
+    select_dropdown(identifier='//*[@id="ContentPlaceHolder1_ddlPageSize"]', value='500')
     # Click search and load table with discipline links
     click_button(identifier='//*[@id="ContentPlaceHolder1_btnSearch"]')
     # Wait until links are loaded in order to find them
@@ -216,7 +229,10 @@ if __name__ == '__main__':
             element_clickable = EC.element_to_be_clickable((By.CLASS_NAME, 'btn-link'))
             element = WebDriverWait(driver, timeout=15).until(element_clickable)
         discipline_link = driver.find_elements("xpath", '//*[@class="btn-link"]')[i]
-        get_discipline_courses(discipline_link, discipline_number=i)
+        if i == START_DISCIPLINE:
+            get_discipline_courses(discipline_link, discipline_number=i, start_page=2)
+        else:
+            get_discipline_courses(discipline_link, discipline_number=i)
         # Only used for development:
         # if i < 2: # Can tweak this number based on how many disciplines' courses are finished downloading
         #     get_discipline_courses(discipline_link, discipline_number=i, skip_to_end=True)
@@ -225,4 +241,4 @@ if __name__ == '__main__':
     driver.quit()
 
 
-    
+    # Pages that aren't working: Discipline 14, Page 2

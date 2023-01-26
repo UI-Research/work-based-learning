@@ -13,7 +13,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 def click_button(identifier, by=By.XPATH, timeout=15):   
     '''
-    This function waits until a button is clickable and then clicks on it.
+    This function waits until a button is clickable and then clicks on it.`
 
     Inputs:
         identifier (string): The Id, XPath, or other way of identifying the element to be clicked on
@@ -43,7 +43,7 @@ def select_dropdown(identifier, by=By.XPATH, value=None, index=None):
             In this case, should specify that value = None.
     
     Returns:
-        None (just selects on the right item in the dropdown menu)
+        None (just selects the right item in the dropdown menu)
     '''
     element_clickable = EC.element_to_be_clickable((by, identifier))
     element = WebDriverWait(driver, timeout=15).until(element_clickable)
@@ -51,7 +51,6 @@ def select_dropdown(identifier, by=By.XPATH, value=None, index=None):
         Select(element).select_by_value(value)
     else:
         Select(element).select_by_index(index)
-    print('selected!')
 
 ### Get key value pairs to construct course json file
 def get_kv(form):
@@ -198,7 +197,8 @@ def get_discipline_courses(discipline_link, discipline_number, skip_to_end=False
 
 if __name__ == '__main__':
     # Can tweak this parameter based on how many disciplines have been successfully scraped
-    START_DISCIPLINE = 14
+    START_DISCIPLINE = 16
+    START_PAGE = 2
 
     # Home page url
     url = "https://flscns.fldoe.org/Default.aspx"
@@ -230,7 +230,7 @@ if __name__ == '__main__':
             element = WebDriverWait(driver, timeout=15).until(element_clickable)
         discipline_link = driver.find_elements("xpath", '//*[@class="btn-link"]')[i]
         if i == START_DISCIPLINE:
-            get_discipline_courses(discipline_link, discipline_number=i, start_page=2)
+            get_discipline_courses(discipline_link, discipline_number=i, start_page=START_PAGE)
         else:
             get_discipline_courses(discipline_link, discipline_number=i)
         # Only used for development:
@@ -241,4 +241,3 @@ if __name__ == '__main__':
     driver.quit()
 
 
-    # Pages that aren't working: Discipline 14, Page 2

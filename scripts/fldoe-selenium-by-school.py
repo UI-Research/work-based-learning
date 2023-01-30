@@ -3,13 +3,14 @@ import json
 import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.service import Service
-# from selenium.webdriver.chrome.service import Service
+# from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
+import pandas as pd
 import time
-from webdriver_manager.firefox import GeckoDriverManager
-# from webdriver_manager.chrome import ChromeDriverManager
+# from webdriver_manager.firefox import GeckoDriverManager
+from webdriver_manager.chrome import ChromeDriverManager
 
 def click_button(identifier, by=By.XPATH, timeout=15):   
     '''
@@ -187,17 +188,18 @@ def get_school_courses(school_name, skip_to_end=False, start_page=1, start_cours
 
 
 if __name__ == '__main__':
+    # Read in list of schools and their HTML codes
+    schools = pd.read_csv('data/school_metadata.csv')
     # Can tweak this parameter based on how many schools have been successfully scraped
-    START_SCHOOL = 2
-    START_PAGE = 2
-    school_list = ['PESC', 'VC', 'PBSC', 'IRSC', 'SSCF', 'BC', 'SCFMS', 'EFSC', 'FGC', 'SFC', 'GCSC', 'FSCJ', 'CF']
-    school_values = ['76', '49', '31', '59', '89', '26', '11', '68', '55', '52', '27', '20', '69']
+    START_SCHOOL = 12
+    START_PAGE = 1
+    
 
 
     # Home page url
     url = "https://flscns.fldoe.org/Default.aspx"
-    service = Service(executable_path=GeckoDriverManager().install())
-    driver = webdriver.Firefox(service=service)
+    service = Service(executable_path=ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service)
     driver.get(url)
 
     # Go to find an institution course  
@@ -205,17 +207,18 @@ if __name__ == '__main__':
     click_button(identifier='//*[@id="dropdownmenu1"]/li[2]/a')
     # Load all courses in one page
     select_dropdown(identifier='//*[@id="ContentPlaceHolder1_ddlPageSize"]', value='500')
-    # Iterate through the 12 schools in the list
-    for j, i in enumerate(school_values):
-        if j < START_SCHOOL: # Will skip if already have that data scraped
+    # Iterate through the schools in the list
+    for i in range(len(schools)):
+        school_name = schools.loc[i, 'school_full']
+        if i < START_SCHOOL: # Will skip if already have that data scraped
             continue
-        select_dropdown(identifier='//*[@id="ContentPlaceHolder1_ddlInstitution"]', by=By.XPATH, value=i)
+        select_dropdown(identifier='//*[@id="ContentPlaceHolder1_ddlInstitution"]', by=By.XPATH, value=str(schools.loc[i, 'value']))
         click_button(identifier='//*[@id="ContentPlaceHolder1_btnSearch"]')
-        print(f'*****SCRAPING SCHOOL {school_list[j]} (number {j})*****')
-        if j == START_SCHOOL:
-            get_school_courses(school_list[j], start_page=START_PAGE)
+        print(f'*****SCRAPING SCHOOL {school_name} (number {i})*****')
+        if i == START_SCHOOL:
+            get_school_courses(schools.loc[i, 'school_abbrev'], start_page=START_PAGE)
         else:
-            get_school_courses(school_list[j])
+            get_school_courses(schools.loc[i, 'school_abbrev'])
         
     driver.quit()
 

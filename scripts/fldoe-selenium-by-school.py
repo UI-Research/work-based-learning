@@ -3,14 +3,17 @@ import json
 import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service 
+from webdriver_manager.chrome import ChromeDriverManager
+## NOTE: Some users may want to try a Firefox Driver instead;
+## Can comment above two lines and uncomment the below two lines
 # from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.chrome.service import Service
+# from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 import pandas as pd
 import time
-# from webdriver_manager.firefox import GeckoDriverManager
-from webdriver_manager.chrome import ChromeDriverManager
+
 
 def click_button(identifier, by=By.XPATH, timeout=15):   
     '''
@@ -112,17 +115,12 @@ def get_course_info(school_name, course_link, go_back=1):
     driver.execute_script(f"window.history.go(-{go_back})")
 
 
-def get_school_courses(school_name, skip_to_end=False, start_page=1, start_course=0):
+def get_school_courses(school_name):
     '''
     This function loads all of the course link for a particular institution and calls get_course_info()
 
     Inputs:
         school_name (str): abbreviated name of school
-    TEST Inputs (used for development):
-        skip_to_end (bool): If True, will skip to final page of a given school's courses, otherwise starts at the beginning.
-            Useful for testing to make sure there is a smooth transition of the scraper between schools.
-        start_page and start_course (int): Not currently used, also just for testing edge cases and transitions between courses/schools.
-
     Returns:
         None
     '''
@@ -136,12 +134,7 @@ def get_school_courses(school_name, skip_to_end=False, start_page=1, start_cours
         n_pages = 1
     print(f'{n_pages} page(s) of courses')
     
-    # Block is only relevant for development, not in final version.
-    # But still need to initialize "current_page" if this is commented out
-    current_page = n_pages if skip_to_end else start_page
-    if current_page != 1:
-        click_button(identifier=f'//*[@id="ContentPlaceHolder1_gvCoursesGridview"]/tbody/tr[502]/td/table/tbody/tr/td[{current_page}]/a')
-        time.sleep(5)
+    current_page = 1
 
     # Iterate over all pages of courses within the discipline
     more_pages = True
@@ -157,9 +150,6 @@ def get_school_courses(school_name, skip_to_end=False, start_page=1, start_cours
             if j % 30 == 29:
                 print('Sleeping for 30 seconds')
                 time.sleep(10)
-            # if block only needed if you don't want to start with the first course on a page
-            if skip_to_end and j < n_course_links - 1:
-                continue
             course_links_clickable = EC.element_to_be_clickable((By.CLASS_NAME, 'btn-link'))
             WebDriverWait(driver, timeout=15).until(course_links_clickable)
             print(f'School {school_name}, Page {current_page}, Course {j}')
@@ -191,10 +181,7 @@ if __name__ == '__main__':
     # Read in list of schools and their HTML codes
     schools = pd.read_csv('data/school_metadata.csv')
     # Can tweak this parameter based on how many schools have been successfully scraped
-    START_SCHOOL = 12
-    START_PAGE = 1
-    
-
+    START_SCHOOL = 0
 
     # Home page url
     url = "https://flscns.fldoe.org/Default.aspx"
@@ -216,7 +203,7 @@ if __name__ == '__main__':
         click_button(identifier='//*[@id="ContentPlaceHolder1_btnSearch"]')
         print(f'*****SCRAPING SCHOOL {school_name} (number {i})*****')
         if i == START_SCHOOL:
-            get_school_courses(schools.loc[i, 'school_abbrev'], start_page=START_PAGE)
+            get_school_courses(schools.loc[i, 'school_abbrev'])
         else:
             get_school_courses(schools.loc[i, 'school_abbrev'])
         

@@ -56,34 +56,64 @@ def select_dropdown(identifier, by=By.XPATH, value=None, index=None):
     else:
         Select(element).select_by_index(index)
 
-### Get key value pairs to construct course json file
 def get_kv(form):
     '''
-    [MANU TO FILL IN]
+    This function extracts key-value pairs from the a form element by parsing it with BeautifulSoup.
+    
+    Inputs:
+        form(HTML Object): WebElement representing the form containing course information
+    Returns:
+        A dictionary containing key-value pairs with course information
     '''
+    # Get the inner HTML of the form element
     html = form.get_attribute("innerHTML")
+    
+    # Parse the HTML using BeautifulSoup
     soup = BeautifulSoup(html, 'html.parser')   
+    
+    # Find all divs with the class "form-group form-group-sm"
     divs = soup.find_all('div', {"class":"form-group form-group-sm"})
+    
+    # Initialize an empty dictionary to store key-value pairs
     dict = {}
+    
+    # Iterate through the div elements
     for div in divs:
         try:
+            # Extract the key (label) and value (span) from the div
             key = div.find('label').get_text()
             value = div.find("span").get_text()
+            
+            # Add the key-value pair to the dictionary
             dict[key] = value
         except:
+            # If extraction fails, do nothing and continue
             pass
-            # print(f"Nothing to extract")
     
+    # Return the dictionary containing course information
     return dict
+
 
 def kv_to_json(dict, school_name):
     '''
-    [MANU TO FILL IN]
+    This function saves the key-value pairs (course information) as a JSON file in a folder named after the school.
+    
+    Input:
+        dict(dict): Dictionary containing key-value pairs of the course information
+        school_name(str): Name of the school the course belongs to
+    
+    Returns:
+        None (just writes out the JSON data for the course)
     '''
+    # Create the directory for the school if it doesn't exist
     dir = f"data/fldoe-schools/{school_name}"
     if not os.path.exists(dir):
         os.mkdir(dir)
+    
+    # Use the Course ID as the file name
     file_name = dict["Course ID"]
+    
+    # Save the dictionary as a JSON file in the school's directory
     with open(f'{dir}/{file_name}.json', 'w') as fp:
         json.dump(dict, fp)
 

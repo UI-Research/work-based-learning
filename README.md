@@ -9,6 +9,3 @@ FLDOE provides a database of all postsecondary courses offered by public vocatio
 - `fldoe-selenium-by-school.py` provides the code to scrape all course information (including course descriptions) from these community colleges and return them as individual `.json` files.
 - `site_monitor.py` provides code from the Urban Institute's SiteMonitor tool for responsible web scraping - original repo [here](https://github.com/UrbanInstitute/SiteMonitor).
 - `run_site_monitor.py` tracks the response times of the website's landing page to ensure we are not overburdening the site through repeated calls.
-
-
-## Text Analysis

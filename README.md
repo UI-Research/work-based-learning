@@ -1,7 +1,5 @@
 # Supporting Pathways to Careers - A Study of Work-Based Learning
-This repository contains the code needed to:
-1. Scrape course descriptions from the Florida Department of Education's website: https://flscns.fldoe.org/Default.aspx
-2. Conduct text analysis on those course descriptions to identify the prevalence of work-based learning opportunities in Florida community colleges.
+This repository contains the code needed to scrape course descriptions from the Florida Department of Education's website: https://flscns.fldoe.org/Default.aspx
 
 ## Web Scraping
 FLDOE provides a database of all postsecondary courses offered by public vocational-technical centers, community colleges, and universities. We are interested in course descriptions from a subset of these institutions - a list of community colleges from the National Center for Education Statistics [IPEDS database](https://nces.ed.gov/ipeds/). This list can be found under `data/school_metadata.csv`.

@@ -1,0 +1,252 @@
+---
+title: "A Deep Dive into Course Descriptions. Using Quanteda to Identify Work-Based Learning Opportunities"
+subtitle: "Data@Urban Draft"
+author-title: "Authors"
+authors: "Manuel Alcalá and Judah Axelrod"
+affiliation: "Urban Institute"
+date: today
+format:
+  html:
+    theme: urbn.scss
+    self-contained: true
+    code-fold: true
+    code-line-numbers: true
+    html-math-method: katex
+    df-print: default
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    number-depth: 3
+    highlight-style: pygments
+editor_options: 
+  chunk_output_type: console
+
+---
+
+```{r}
+#| include: false
+librarian::shelf(glue, gt)
+my_theme <- function(data, ...){
+  data %>%
+    opt_row_striping() %>%
+    opt_all_caps() %>%
+    opt_table_font(
+      font = list(
+        gt::google_font("Lato"),
+        default_fonts()))  %>%
+    tab_style(
+      locations = cells_title(groups = "title"),
+      style     = list(
+        cell_text(weight = "bold", size = 24)
+      )
+    ) %>%
+    #Apply different style to the title
+    tab_style(
+      locations = cells_title(groups = "title"),
+      style     = list(
+        cell_text(weight = "bold", size = 24)
+      )
+    ) %>%
+    tab_options(
+      column_labels.border.top.width = px(5),
+      column_labels.border.top.color = "#FFFFFF",
+      table.border.top.color = "#FFFFFF",
+      table.border.bottom.color = "#FFFFFF",
+      heading.background.color = '#1696d2',
+      data_row.padding = px(5),
+      source_notes.font.size = 16 ,
+      heading.align = "center",
+      row_group.background.color = '#D0D3D4',
+      ...)
+}
+
+```
+
+
+*This blog post is part two of a series on analyzing work-based learning
+opportunities in community colleges. In [part
+one](https://urban-institute.medium.com/how-web-scraping-powered-our-analysis-of-work-based-learning-opportunities-in-community-colleges-3452320dc345),
+we discussed how we used web scraping to gather course descriptions from
+community colleges in Florida. Now, we'll delve into how we analyzed this data
+using the quanteda package in R.*
+
+## Introduction
+
+In our previous post, we detailed our journey of collecting course descriptions
+from Florida's community colleges using web scraping techniques. We successfully
+compiled a comprehensive dataset, but the question remained: how do we make
+sense of this vast amount of text data? Enter quanteda, an R package designed
+for quantitative text analysis.
+
+## Getting Started with Quanteda
+
+Quanteda, short for Quantitative Analysis of Textual Data, is a powerful tool
+for managing and analyzing text data in R. It provides a suite of functions for
+corpus management, creating document-feature matrices, analyzing keywords, and
+more. These functions are highly performant and have a consistent interface with
+support for multiple languages. While it is a standalone package, it has many
+extensions such as readtext, spacyr, and quanteda.textstats
+
+We can load and install the required packages using the librarian package for
+convenience as follows:
+
+```{r text-}
+librarian::shelf(tidyverse, # data wrangling
+                 quanteda, # text mining
+                 readtext # Read texts and associated document-level meta-data
+)
+```
+
+We can then load our text data containing course descriptions as well as
+document-level meta-data using the `readtext::readtext()` function. We performed
+some more cleaning steps to standarize variable names and only analyze active
+courses for credit.
+
+```{r}
+courses <-
+  readtext(here::here("data/data-intermediate/course-descriptions.csv"), 
+           text_field = "course_description",
+           docid_field = 'course_id') %>% 
+  janitor::clean_names() %>% 
+  filter(course_status == "ACTIVE",
+         type_of_credit == "COLLEGE CREDIT")
+```
+
+```{r}
+#| echo: false
+courses %>% 
+  slice(1:1000) %>% 
+  gt() %>% 
+  opt_interactive(use_text_wrapping = FALSE, use_resizers = TRUE, use_compact_mode = TRUE) %>% 
+  my_theme()
+```
+
+The first step in our analysis was to create a corpus, a collection of text
+documents, from our course descriptions. We can do this using the `corpus()`
+function in quanteda. Next, we extract the tokens in the corpus---these are
+usuallly words but can also be n-grams or multi-word expressions. The `tokens`
+functions enables us to define what we mean by tokens and apply some rules to
+ignore elements such as punctuation and digits.
+
+```{r}
+corpus <- corpus(courses)
+```
+
+```{r}
+#| echo: false
+corpus[1:5]
+```
+
+```{r}
+tk <- tokens(corpus, what = "word", remove_punct = TRUE, remove_numbers = TRUE)
+```
+
+```{r}
+#| echo: false
+tk[1:5]
+```
+
+## Key-Term Searches with a Dictionary
+
+Our primary interest was to identify courses related to different types of work
+based learning such as internships, apprenticeships, or practicums. For each
+type of work based learning experience we create a list of terms that we want to
+treat equivalently. For instance, our dictionary can specify that a course
+description refers to a clinical WBL if either of the terms "clinicals" or
+"clinical experience" appear.
+
+```{r}
+dict <-
+  dictionary(list(apprenticeship = "apprentice*",
+                  practicum = c("practicum", "practica"),
+                  coop = c("co-op", "cooperative education", "co-operative education"),
+                  clinicals = c('clinicals', 'clinical experience'),
+                  on_the_job = c("on the job training", "job training", "on-the-job training"),
+                  wbl = c('work-based learning', "work based learning", "wbl"),
+                  real_world_experience = c("real-world experience", "real world experience"),
+                  service_learning = "serive learning",
+                  field_experience = c("fieldwork", "field experience", "field-experience")))
+```
+
+Now we're ready to search for the terms in our dictionary using the `kwic()`
+(key-word in context) function. It takes in a corpus and a dictionary as inputs
+as well as a window parameter specifying the amount of tokens before and after a
+keyword that we want to see for context.
+
+```{r}
+keywords <- kwic(corpus, dict, window = 10) %>% as_tibble()
+```
+
+```{r}
+#| echo: false
+keywords %>% 
+  gt() %>% 
+  my_theme() %>% 
+  opt_interactive(use_text_wrapping = FALSE, use_resizers = TRUE, use_compact_mode = TRUE) 
+```
+
+Lastly, we can join the results from the dictionary-based keyword in-context
+search back to the course level data and perform some wrangling to analyze the
+prevalence of work-based learning opportunities in Florida's community colleges.
+
+```{r}
+courses_with_keywords <-
+  keywords %>% 
+  left_join(courses, by = c("docname" = "doc_id")) %>%
+  mutate(sentence = glue("{pre} {keyword} {post}") |> str_trim() |> str_to_sentence()) %>% 
+  separate(docname, into = c("school", "course"), sep = "-", extra = 'merge'  ) %>% 
+  mutate(discipline = str_remove(discipline, ".* - ")) %>% 
+  select(school, discipline, course, statewide_course, degree_type, course_credits,  sentence, pattern) |>
+  arrange(school, pattern, discipline) %>% 
+  mutate(pattern = str_to_title(pattern) |> str_replace_all('_', '-'))
+```
+
+```{r}
+#| echo: false
+courses_with_keywords %>% 
+  gt() %>% 
+  my_theme() %>% 
+  opt_interactive(use_text_wrapping = FALSE, use_resizers = TRUE, use_compact_mode = TRUE) 
+```
+
+```{r}
+freq_table <-
+  courses_with_keywords %>%
+  group_by(school, pattern) %>%
+  count() %>%
+  group_by(pattern) %>%
+  bind_rows(summarise(.,
+                      across(where(is.numeric), sum),
+                      across(where(is.character), ~ "total"))) %>% 
+  ungroup() %>%
+  pivot_wider(names_from = pattern, values_from = n) %>%
+  mutate(across(where(is.numeric), ~ replace_na(.x, 0))) %>% 
+  slice(n(), 1:n()-1)
+```
+
+```{r}
+#| echo: false
+freq_table %>%
+  gt() %>% 
+  my_theme() %>% 
+  opt_interactive()
+```
+
+## Conclusion
+
+In this post, we've demonstrated how to use quanteda to analyze course
+descriptions and identify work-based learning opportunities in community
+colleges. While our analysis focused on Florida, the same methods could be
+applied to other states or regions.
+
+Through this analysis, we've gained valuable insights into the prevalence of
+work-based learning in Florida's community colleges. We hope that our work can
+serve as a foundation for further research and policy discussions on this
+important topic.
+
+In the end, the power of quanteda lies not justin its ability to handle large
+text data, but also in its flexibility. It allows researchers to tailor their
+analysis to their specific needs, whether that's identifying key terms,
+comparing text documents, or exploring text patterns.
+
+*This blog post was co-authored by Judah Axelrod and Manuel Alcala Kovalski.*

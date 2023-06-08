@@ -1,0 +1,228 @@
+---
+title: "Florida Catalogs"
+format: 
+  html:
+    embed-resources: true
+editor: visual
+---
+
+```{r, include=FALSE, warning=FALSE}
+librarian::shelf(tidyverse, readtext, quanteda, glue, reactable, tidytext, gt, crosstalk, here, reactablefmtr, tldextract)
+```
+
+```{r}
+#| echo: false
+text_dir <- here("data/data-intermediate/text/")
+
+
+catalogs <- 
+  readtext(text_dir, text_field = 'text') %>% 
+  mutate(doc_id = str_remove_all(doc_id, ".edu-.*"),
+         doc_id = paste(doc_id, url, sep=' ') %>% make.unique())
+
+corpus <- corpus(catalogs, meta = c('title', 'url'))
+```
+
+```{r, include=FALSE}
+
+my_theme <- function(data, ...){
+  data %>%
+    opt_row_striping() %>%
+    opt_all_caps() %>%
+    opt_table_font(
+      font = list(
+        gt::google_font("Lato"),
+        default_fonts()))  %>%
+    tab_style(
+      locations = cells_title(groups = "title"),
+      style     = list(
+        cell_text(weight = "bold", size = 24)
+      )
+    ) %>%
+    #Apply different style to the title
+    tab_style(
+      locations = cells_title(groups = "title"),
+      style     = list(
+        cell_text(weight = "bold", size = 24)
+      )
+    ) %>%
+    tab_options(
+      column_labels.border.top.width = px(5),
+      column_labels.border.top.color = "#FFFFFF",
+      table.border.top.color = "#FFFFFF",
+      table.border.bottom.color = "#FFFFFF",
+      heading.background.color = '#1696d2',
+      data_row.padding = px(5),
+      source_notes.font.size = 16 ,
+      heading.align = "center",
+      row_group.background.color = '#D0D3D4',
+      ...)
+}
+```
+
+Found links for 18 out of 29 Florida schools.
+
+```{r}
+#| echo: false
+schools_scraped <-
+  catalogs %>% 
+  separate(doc_id, into = c("school", "url"), sep = " ") %>% 
+  count(school) %>% 
+  arrange(desc(n)) 
+
+schools_all <-
+  fs::dir_ls(text_dir) %>%
+  as_tibble_col(column_name = 'school') %>%
+  mutate(school = str_remove_all(school, text_dir),
+         school = str_remove(school, '.edu-text.csv'))
+
+schools_all_count <-
+  schools_all %>% 
+  left_join(schools_scraped, by = 'school') %>% 
+  replace_na(list(n = 0)) %>% 
+  arrange(desc(n)) 
+
+schools_all_count %>% 
+  gt() %>% 
+  my_theme() %>% 
+  tab_header("Number of URLs found by school")
+```
+
+However, 5 of the 18 schools returned under 2 links. All of these
+schools except Lake Summer State College (LSCC) had PDF catalogs only.
+
+```{r}
+#| echo: false
+schools_scraped %>%
+  filter(n < 3) %>%
+  left_join(catalogs %>%
+              separate(doc_id, into = c("school", "url"), sep = " "), 
+            by = 'school') %>% 
+  select(school, title, url) %>% 
+    gt() %>% 
+  my_theme() %>% 
+  tab_header("PDF or interactive catalog found")
+```
+
+LSCC has a [online
+catalog](https://lssc.smartcatalogiq.com/en/current/catalog-and-student-handbook/courses/)
+but it's interactive and requires user input to filter catalogs before
+loading. Our crawling method only works for static pages so a different
+approach is needed here. However, it looks like it should be doable.
+
+## Dictionary
+
+```{r, echo=FALSE}
+#| echo: false
+dict <-
+  dictionary(list(apprenticeship = "apprentice*",
+                  practicum = c("practicum", "practica"),
+                  coop = c("co-op", "cooperative education", "co-operative education"),
+                  clinicals = c('clinicals', 'clinical experience'),
+                  on_the_job = c("on the job training", "job training", "on-the-job training"),
+                  wbl = c('work-based learning', "work based learning", "wbl"),
+                  real_world_experience = c("real-world experience", "real world experience"),
+                  service_learning = "serive learning",
+                  field_experience = c("fieldwork", "field experience", "field-experience")))
+
+tidy(dict) |> 
+  group_by(category) |>
+  mutate(search_terms = str_flatten(string = word, collapse = ', ')) |>
+  select(category, search_terms) |>
+  distinct(category, .keep_all = TRUE) |> 
+  mutate(category = str_to_title(category) |> str_replace_all( '_', '-')) |> 
+  ungroup() |> 
+  gt() |> 
+  gt::cols_label(search_terms = "Search Terms") |> 
+  tab_header("WBL Dictionary") |> 
+  my_theme()
+```
+
+## Search Results
+
+```{r}
+#| echo: false
+#| warning: false
+df <-
+  corpus %>% 
+  kwic(dict, window = 20) %>% 
+  as_tibble() %>% 
+  separate(docname, into = c("school", "url"), " ") %>% 
+  mutate(sentence = glue("{pre} <span style = 'color:#ec008b;'>{keyword}</span> {post}") |> str_trim() |> str_to_sentence()) %>% 
+  mutate(sentence = str_replace_all(sentence, ' ,', ','),
+         sentence = str_replace_all(sentence, ' :', ':')) %>%
+  select(school, url, sentence, pattern) |>
+  arrange(school, url) |>
+  mutate(pattern = str_to_title(pattern) |> str_replace_all('_', '-'))
+
+
+```
+
+```{r}
+#| echo: false
+freq_table <-
+  df %>%
+  group_by(school, pattern) %>%
+  count() %>%
+  group_by(pattern) %>%
+  bind_rows(summarise(.,
+                      across(where(is.numeric), sum),
+                      across(where(is.character), ~ "total"))) %>% 
+  ungroup() %>%
+  pivot_wider(names_from = pattern, values_from = n) %>%
+  mutate(across(where(is.numeric), ~ replace_na(.x, 0))) %>% 
+  slice(n(), 1:n()-1)
+
+
+freq_table %>%
+  full_join(schools_all, by = 'school') %>%
+  mutate(across(where(is.numeric), ~ replace_na(.x, 0))) %>%
+  gt() %>%
+  my_theme() %>%
+  tab_header("Frequency Table")
+
+```
+
+```{r, echo=FALSE, warning=FALSE}
+#| echo: false
+df_shared <- SharedData$new(df)
+
+table <-
+  reactable(df_shared,
+          defaultPageSize = 10,
+          theme = flatly(),
+          columns = list(
+            school = colDef('School',),
+            url = colDef(
+              name = 'URL',
+              maxWidth = 300
+            ),
+            pattern = colDef('Pattern', maxWidth = 120),
+            sentence = colDef('Sentence', html = TRUE)
+          )) 
+
+  bscols(
+      widths = c(1.5, 10.5),
+      list(
+        filter_select("school", "School", df_shared, ~school, multiple = TRUE),
+        filter_select("pattern", "Pattern", df_shared, ~pattern, multiple = TRUE)
+      ),
+      table
+  )
+```
+
+```{r}
+#| include: false
+ipeds_fl <- read_csv(here('data/data-raw/ipeds-fl.csv'))
+
+missing_schools <-
+  schools_all_count %>% 
+  filter(n == 0) %>% 
+  mutate(url = glue("https://www.{school}.edu/")) %>% 
+  mutate(url = if_else(school == 'floridacollege', glue("{str_replace(url, 'www.', '')}"),  url)) %>% 
+  mutate(url = if_else(school != 'fl', url, str_replace(url, 'fl', 'tcc.fl'))) %>% 
+  left_join(ipeds_fl, by = 'url') %>% 
+  select(-n)
+
+#write_csv(missing_schools, here("data/data-intermediate/ipeds-fl-missing.csv"))
+```

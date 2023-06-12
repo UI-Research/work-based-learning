@@ -2,7 +2,7 @@
 title: "A Deep Dive into Course Descriptions. Using Quanteda to Identify Work-Based Learning Opportunities"
 subtitle: "Data@Urban Draft"
 author-title: "Authors"
-authors: "Manuel Alcalá and Judah Axelrod"
+authors: "Manuel Alcalá Kovalski and Judah Axelrod"
 affiliation: "Urban Institute"
 date: today
 format:
@@ -20,6 +20,9 @@ format:
     highlight-style: pygments
 editor_options: 
   chunk_output_type: console
+execute:
+  warning: false
+  message: false
 
 ---
 
@@ -222,4 +225,4 @@ important topic.
 
 The power of quanteda lies not just in its ability to handle large text data, but also in its flexibility. It allows researchers to tailor their analysis to their specific needs, whether that's identifying key terms, comparing text documents, or exploring text patterns.
 
-*This blog post was co-authored by Judah Axelrod and Manuel Alcala Kovalski.*
+*This blog post was co-authored by Judah Axelrod and Manuel Alcalá Kovalski.*

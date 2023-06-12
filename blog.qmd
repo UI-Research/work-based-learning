@@ -84,7 +84,7 @@ for quantitative text analysis.
 ## Getting Started with Quanteda
 
 [Quanteda](https://quanteda.io), short for Quantitative Analysis of Textual Data, is a powerful tool
-for managing and analyzing text data in R. It offers a suite of functions for corpus management, creating document-feature matrices, analyzing keywords, and more. These functions are highly efficient and provide a consistent interface with support for multiple languages. While it operates as a standalone package, it also integrates seamlessly with extensions such as `readtext`, `spacyr`, and `quanteda.textstats`.
+for managing and analyzing text data in R. It offers a suite of functions for managing a [corpus](https://tutorials.quanteda.io/basic-operations/corpus/corpus/)—or a collection of texts—such as creating [document-feature matrices](https://tutorials.quanteda.io/basic-operations/dfm/), [analyzing keywords](https://tutorials.quanteda.io/basic-operations/tokens/kwic/), and more. These functions are highly efficient and provide a consistent interface with support for multiple languages. While it operates as a standalone package, it also integrates seamlessly with extensions such as `readtext`, `spacyr`, and `quanteda.textstats`.
 
 To install and load the required packages, we can use the librarian package for convenience
 ```{r text-}

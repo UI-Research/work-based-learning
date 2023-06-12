@@ -71,20 +71,20 @@ opportunities in community colleges. In [part
 one](https://urban-institute.medium.com/how-web-scraping-powered-our-analysis-of-work-based-learning-opportunities-in-community-colleges-3452320dc345),
 we discussed how we used web scraping to gather course descriptions from
 community colleges in Florida. Now, we'll delve into how we analyzed this data
-using the quanteda package in R.*
+using the `quanteda` package in R.*
 
 ## Introduction
 
 In our previous post, we detailed our journey of collecting course descriptions
 from Florida's community colleges using web scraping techniques. We successfully
 compiled a comprehensive dataset, but the question remained: how do we make
-sense of this vast amount of text data? Enter quanteda, an R package designed
+sense of this vast amount of text data? Enter `quanteda`, an R package designed
 for quantitative text analysis.
 
 ## Getting Started with Quanteda
 
 [Quanteda](https://quanteda.io), short for Quantitative Analysis of Textual Data, is a powerful tool
-for managing and analyzing text data in R. It offers a suite of functions for corpus management, creating document-feature matrices, analyzing keywords, and more. These functions are highly efficient and provide a consistent interface with support for multiple languages. While it operates as a standalone package, it also integrates seamlessly with extensions such as readtext, spacyr, and quanteda.textstats.
+for managing and analyzing text data in R. It offers a suite of functions for corpus management, creating document-feature matrices, analyzing keywords, and more. These functions are highly efficient and provide a consistent interface with support for multiple languages. While it operates as a standalone package, it also integrates seamlessly with extensions such as `readtext`, `spacyr`, and `quanteda.textstats`.
 
 To install and load the required packages, we can use the librarian package for convenience
 ```{r text-}
@@ -94,7 +94,7 @@ librarian::shelf(tidyverse, # data wrangling
 )
 ```
 
-Next, we load our text data containing course descriptions as well as document-level meta-data using the readtext::readtext() function. We then perform some additional cleaning steps to standardize variable names and focus our analysis on active courses for credit.
+Next, we load our text data containing course descriptions as well as document-level meta-data using the `readtext::readtext()` function. We then perform some additional cleaning steps to standardize variable names and focus our analysis on active courses for credit.
 
 ```{r}
 courses <-
@@ -115,7 +115,7 @@ courses %>%
   my_theme()
 ```
 
-The first step in our analysis is to create a corpus, a collection of text documents, from our course descriptions. We can achieve this using the corpus() function in quanteda. Next, we extract the tokens in the corpus—usually words, but they can also be n-grams or multi-word expressions. The tokens function allows us to define what we mean by tokens and apply some rules to ignore elements such as punctuation and digits.
+The first step in our analysis is to create a corpus, a collection of text documents, from our course descriptions. We can achieve this using the `corpus()` function in `quanteda.` Next, we extract the tokens in the corpus—usually words, but they can also be n-grams or multi-word expressions. The tokens function allows us to define what we mean by tokens and apply some rules to ignore elements such as punctuation and digits.
 
 ```{r}
 corpus <- corpus(courses)
@@ -152,7 +152,7 @@ dict <-
                   field_experience = c("fieldwork", "field experience", "field-experience")))
 ```
 
-Armed with our dictionary, we're ready to search for the terms using the kwic() (key-word in context) function. This function takes in a corpus and a dictionary as inputs, along with a window parameter specifying the number of tokens before and after a keyword that we want to see for context.
+Armed with our dictionary, we're ready to search for the terms using the `kwic()` (key-word in context) function. This function takes in a corpus and a dictionary as inputs, along with a window parameter specifying the number of tokens before and after a keyword that we want to see for context.
 
 ```{r}
 keywords <- kwic(corpus, dict, window = 10) %>% as_tibble()
@@ -213,7 +213,7 @@ freq_table %>%
 
 ## Conclusion
 
-In this post, we've demonstrated how to use quanteda to analyze course
+In this post, we've demonstrated how to use `quanteda` to analyze course
 descriptions and identify work-based learning opportunities in community
 colleges. While our analysis focused on Florida, the same methods could be
 applied to other states or regions.
@@ -223,6 +223,6 @@ work-based learning in Florida's community colleges. We hope that our work can
 serve as a foundation for further research and policy discussions on this
 important topic.
 
-The power of quanteda lies not just in its ability to handle large text data, but also in its flexibility. It allows researchers to tailor their analysis to their specific needs, whether that's identifying key terms, comparing text documents, or exploring text patterns.
+The power of `quanteda` lies not just in its ability to handle large text data, but also in its flexibility. It allows researchers to tailor their analysis to their specific needs, whether that's identifying key terms, comparing text documents, or exploring text patterns.
 
 *This blog post was co-authored by Manuel Alcalá Kovalski and Judah.*

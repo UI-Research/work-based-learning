@@ -103,7 +103,11 @@ courses <-
            docid_field = 'course_id') %>% 
   janitor::clean_names() %>% 
   filter(course_status == "ACTIVE",
-         type_of_credit == "COLLEGE CREDIT")
+         type_of_credit == "COLLEGE CREDIT") %>% 
+  select(doc_id, discipline, course_title, course_credits, text) %>%
+  mutate(course_title = str_to_title(course_title),
+         discipline = str_to_title(discipline),
+         text = str_to_sentence(text))
 ```
 
 ```{r}
@@ -111,7 +115,21 @@ courses <-
 courses %>% 
   slice(1:1000) %>% 
   gt() %>% 
-  opt_interactive(use_text_wrapping = FALSE, use_resizers = TRUE, use_compact_mode = TRUE) %>% 
+    opt_interactive(
+    use_resizers = TRUE,
+    use_filters = TRUE,
+    use_compact_mode = TRUE,
+    use_highlight = TRUE,
+    use_search = TRUE,
+    use_text_wrapping = TRUE
+  ) %>%
+    cols_width(
+    doc_id ~ px(150),
+    discipline ~ px(180),
+    course_title ~ px(150),
+    course_credits ~ px(80),
+    text ~ px(350)
+  ) %>% 
   my_theme()
 ```
 
@@ -175,7 +193,7 @@ courses_with_keywords <-
   mutate(sentence = glue("{pre} {keyword} {post}") |> str_trim() |> str_to_sentence()) %>% 
   separate(docname, into = c("school", "course"), sep = "-", extra = 'merge'  ) %>% 
   mutate(discipline = str_remove(discipline, ".* - ")) %>% 
-  select(school, discipline, course, statewide_course, degree_type, course_credits,  sentence, pattern) |>
+  select(school, discipline, course, course_credits,  sentence, pattern) |>
   arrange(school, pattern, discipline) %>% 
   mutate(pattern = str_to_title(pattern) |> str_replace_all('_', '-'))
 ```
@@ -218,11 +236,13 @@ descriptions and identify work-based learning opportunities in community
 colleges. While our analysis focused on Florida, the same methods could be
 applied to other states or regions.
 
+The power of `quanteda` lies not just in its ability to handle large text data, but also in its flexibility. It allows researchers to tailor their analysis to their specific needs, whether that's identifying key terms, comparing text documents, or exploring text patterns.
+
 Through this analysis, we've gained valuable insights into the prevalence of
 work-based learning in Florida's community colleges. We hope that our work can
 serve as a foundation for further research and policy discussions on this
 important topic.
 
-The power of `quanteda` lies not just in its ability to handle large text data, but also in its flexibility. It allows researchers to tailor their analysis to their specific needs, whether that's identifying key terms, comparing text documents, or exploring text patterns.
+
 
 *This blog post was co-authored by Manuel Alcalá Kovalski and Judah.*

@@ -94,7 +94,7 @@ librarian::shelf(tidyverse, # data wrangling
 )
 ```
 
-Next, we load our text data containing course descriptions as well as document-level meta-data using the `readtext::readtext()` function. We then perform some additional cleaning steps to standardize variable names and focus our analysis on active courses for credit.
+Next, we load our text data containing course descriptions as well as document-level metadata using the `readtext::readtext()` function. We then perform some additional cleaning steps to standardize variable names and focus our analysis on active courses for credit.
 
 ```{r}
 courses <-

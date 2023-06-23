@@ -132,7 +132,7 @@ column in our courses dataframe:
 -   course_credits: The number of credit hours that a
     student receives upon completion of the course.
 
--   text: This column contains the course description text that was scraped from
+-   text: The course description text that was scraped from
     the [Florida Department of Education's course catalog
     website](https://flscns.fldoe.org/Default.aspx). This is the main body of
     text that we analyze using text mining techniques. The text appears to

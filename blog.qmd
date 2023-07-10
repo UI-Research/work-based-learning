@@ -53,15 +53,15 @@ Florida using web scraping techniques. Work-based learning (WBL), which consists
 of opportunities such as internships, apprenticeships, and practicums, focuses
 on career preparation and training in supervised, work-like settings. Community
 colleges, with their career-focused curricula and diverse student populations,
-offer an ideal setting for such opportunities. We successfully compiled a
-comprehensive dataset of course descriptions, but the question remained: what is
+offer an ideal setting for such opportunities. After successfully compiling a
+comprehensive dataset of course descriptions, the question remained: what is
 the prevalence and nature of WBL opportunities in Florida's
 community colleges as reflected in their course descriptions?
 
-To answer this question, we turned to text analysis, a methodology that allows us
+To answer this question, we turned to text analysis, an approach that allows us
 to extract meaningful information from large volumes of text data. Text analysis
 is particularly suited to our research question because it enables us to
-identify and quantify specific keywords, such as terms related to work-based
+identify and quantify specific keywords related to work-based
 learning, within our data frame of course descriptions. In this post, we'll
 delve into our methodology for analyzing this data using the `quanteda` package
 in R, a powerful tool for quantitative text analysis. All of the code can be viewed in our public [GitHub repository](https://github.com/UI-Research/work-based-learning).
@@ -81,7 +81,7 @@ it also integrates seamlessly with extensions such as `readtext`, `spacyr`, and
 `quanteda.textstats`.
 
 To install and load the required packages, we can use the librarian package for
-convenience
+convenience.
 
 ```{r text-}
 librarian::shelf(tidyverse, # data wrangling
@@ -96,24 +96,24 @@ perform some additional cleaning steps to standardize variable names and focus
 our analysis on active courses for credit. Here's a brief explanation of each
 column in our courses dataframe:
 
--   doc_id: This is a unique identifier for each course. It is constructed by
+-   doc_id: A unique identifier for each course, constructed by
     combining the school abbreviation, the course prefix, and the course number.
     For example, 'BC-THE-2300' refers to a course at the school abbreviated as
     'BC', with the course prefix 'THE', and the course number '2300'.
 
--   discipline: This column contains the discipline or subject area of the
-    course. The discipline is represented as a code and a description, such as
+-   discipline: The subject area of the
+    course, represented as a code and a description, such as
     '080 - THEATRE ARTS'.
 
--   course_title: This is the title of the course.
+-   course_title: The title of the course.
 
--   course_credits: This column indicates the number of credit hours that a
+-   course_credits: The number of credit hours that a
     student receives upon completion of the course.
 
--   text: This column contains the course description text that was scraped from
+-   text: The course description text that was scraped from
     the [Florida Department of Education's course catalog
     website](https://flscns.fldoe.org/Default.aspx). This is the main body of
-    text that will be analyzed using text mining techniques. The text appears to
+    text that we analyze using text mining techniques. The text appears to
     be truncated in the provided data, as indicated by the ellipsis at the end
     of each string.
 
@@ -158,7 +158,7 @@ The first step in our analysis is to create a corpus, a collection of text
 documents, from our course descriptions. We can achieve this using the
 `corpus()` function in `quanteda.` Next, we extract the tokens in the
 corpus---usually words, but they can also be [n-grams](https://tutorials.quanteda.io/basic-operations/tokens/tokens_ngrams/) (a collection of successive tokens) or multi-word expressions.
-The tokens function allows us to define what we mean by tokens and apply some
+The tokens function allows us to define what we consider to be a token and apply some
 rules to ignore elements such as punctuation and digits.
 
 ```{r}
@@ -166,8 +166,8 @@ corpus <- corpus(courses)
 ```
 
 The output of this code is a corpus object that consists of the course
-descriptions from our data frame. Each document in the corpus corresponds to a
-course description, and the corpus contains metadata about each document. For
+descriptions from our data frame. The corpus contains metadata about the documents, each of which correspond to a
+course description. For
 instance, the first few documents in the corpus look something like this:
 
 ```{r}
@@ -179,7 +179,7 @@ Each line represents a document in the corpus, with the document ID (e.g.,
 "BC-THE-2300") followed by a snippet of the course description. This corpus will
 serve as the basis for our subsequent text analysis.
 
-After tokenizing the corpus, we obtain a list of tokens for each document. These tokens are essentially the individual words from each course description, stripped of punctuation and numbers.
+After tokenizing the corpus, we obtain a list of tokens for each document. In this case, the tokens are the individual words from each course description, stripped of punctuation and numbers.
 ```{r}
 tk <- tokens(corpus, what = "word", remove_punct = TRUE, remove_numbers = TRUE)
 ```
@@ -194,9 +194,9 @@ Each line represents a document in the corpus, with the document ID (e.g., "BC-T
 
 ## Key-Term Searches with a Dictionary
 
-Our primary interest lies in identifying courses related to different types of WBL such as internships, apprenticeships, or practicums. To do this, we developed a dictionary of key terms in collaboration with subject matter experts from [Urban's Income and Benefits Policy Center](https://www.urban.org/policy-centers/income-and-benefits-policy-center) who specialize in workforce development research. Therefore, the dictionary used in this analysis is a product of careful curation based on the literature on WBL.
+Our primary interest lies in identifying courses related to different types of WBL such as internships, apprenticeships, or practicums. To do this, we developed a dictionary of key terms in collaboration with subject matter experts from [Urban's Income and Benefits Policy Center](https://www.urban.org/policy-centers/income-and-benefits-policy-center) who specialize in workforce development research. The resulting dictionary used in this analysis is a product of careful curation based on the literature on WBL.
 
-For each type of WBL experience, we created a list of terms that we want to treat equivalently. This approach allows us to capture the various ways in which a particular type of WBL might be referred to in a course description. For instance, our dictionary specifies that a course description refers to a clinical WBL experience if either of the terms "clinicals" or "clinical experience" appear. This method ensures that our analysis is comprehensive and accurately reflects the range of WBL opportunities offered by community colleges.
+For each type of WBL experience, we created a list of terms that we want to treat equivalently.  For instance, our dictionary specifies that a course description refers to a clinical WBL experience if either of the terms "clinicals" or "clinical experience" appear. This approach allows us to capture the various ways in which a particular type of WBL might be referred to in a course description.
 
 
 ```{r}
@@ -281,7 +281,6 @@ freq_table %>%
 
 ## Discussion
 
-Our text analysis has provided valuable insights into the prevalence of WBL opportunities in Florida's community colleges. The medical and education sectors dominate WBL opportunities, with clinicals and field experiences being the most common types. However, apprenticeships, despite their proven value in career preparation and advancement, are one of the least offered forms of WBL.
 
 Our analysis revealed that the medical and education sectors dominate WBL opportunities, which is expected given that these fields often require practical experience for licensure. Clinicals, largely offered in medical and related fields, and field experiences, predominantly in the education sector, were the most common types of WBL identified. However, we also found that apprenticeships, despite their value in career preparation and advancement ([Kuehn, Marotta, et al. 2022](https://www.urban.org/research/publication/beyond-productivity-how-employers-gain-more-apprenticeship)), are one of the least offered forms of WBL.
 

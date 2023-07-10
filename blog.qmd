@@ -64,7 +64,7 @@ is particularly suited to our research question because it enables us to
 identify and quantify specific keywords, such as terms related to work-based
 learning, within our data frame of course descriptions. In this post, we'll
 delve into our methodology for analyzing this data using the `quanteda` package
-in R, a powerful tool for quantitative text analysis.
+in R, a powerful tool for quantitative text analysis. All of the code can be viewed in our public [GitHub repository](https://github.com/UI-Research/work-based-learning).
 
 ## Getting Started with Quanteda
 

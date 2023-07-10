@@ -1,29 +1,7 @@
 ---
 title: "A Deep Dive into Course Descriptions. Using Quanteda to Identify Work-Based Learning Opportunities"
-subtitle: "Data@Urban Draft"
-author-title: "Authors"
-authors: "Manuel Alcalá Kovalski and Judah Axelrod"
-affiliation: "Urban Institute"
-date: today
 format:
-  html:
-    theme: urbn.scss
-    self-contained: true
-    code-fold: true
-    code-line-numbers: true
-    html-math-method: katex
-    df-print: default
-    toc: true
-    toc-depth: 3
-    number-sections: true
-    number-depth: 3
-    highlight-style: pygments
-    page-layout: full
-editor_options: 
-  chunk_output_type: console
-execute:
-  warning: false
-  message: false
+  docx
 ---
 
 ```{r}
@@ -179,7 +157,7 @@ courses %>%
 The first step in our analysis is to create a corpus, a collection of text
 documents, from our course descriptions. We can achieve this using the
 `corpus()` function in `quanteda.` Next, we extract the tokens in the
-corpus---usually words, but they can also be n-grams or multi-word expressions.
+corpus---usually words, but they can also be [n-grams](https://tutorials.quanteda.io/basic-operations/tokens/tokens_ngrams/) (a collection of successive tokens) or multi-word expressions.
 The tokens function allows us to define what we mean by tokens and apply some
 rules to ignore elements such as punctuation and digits.
 

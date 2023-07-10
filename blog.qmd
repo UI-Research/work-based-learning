@@ -230,7 +230,7 @@ keywords %>%
 ```
 
 
-Finally, we can merge the results from the dictionary-based keyword in-context search back into our course-level data. This involves joining the keyword data with the original course data, followed by a series of data transformations. First, we split the `docname` document identifier column into separate `school` and `course` columns, which allows us to analyze the frequencies of WBL opportunities by school. Next, we construct a `sentence` column that encapsulates the matching keywords along with their context, and we format this text to ensure it is in sentence case. Lastly, we carry out a few more string manipulation steps on the `discipline` and `pattern` columns to enhance the readability of our data. It's also worth noting that the `pattern` column refers to the umbrella term used to describe the same type of WBL opportunity in our dictionary.
+Finally, we integrate the results from the dictionary-based keyword in-context search back into our course-level data. This process involves merging the keyword data with the original course data and performing a series of data transformations. Specifically, we split the `docname` document identifier into separate `school` and `course` columns, create a `sentence` column that encapsulates the matching keywords along with their context, and perform string manipulations on the `discipline` and `pattern` columns to enhance readability.
 
 ```{r}
 courses_with_keywords <-

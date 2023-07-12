@@ -185,8 +185,6 @@ After tokenizing the corpus, we obtain a list of tokens for each document. In th
 tk[1:3]
 ```
 
-Each line represents a document in the corpus, with the document ID followed by a list of tokens extracted from the course description. These tokens will be used for our subsequent text analysis tasks.
-
 ## Key-Term Searches with a Dictionary
 
 Our primary interest lies in identifying courses related to different types of WBL such as internships, apprenticeships, or practicums. To do this, we developed a dictionary of key terms in collaboration with subject matter experts from [Urban's Income and Benefits Policy Center](https://www.urban.org/policy-centers/income-and-benefits-policy-center) who specialize in workforce development research. The resulting dictionary used in this analysis is a product of careful curation based on the literature on WBL.
@@ -281,7 +279,7 @@ Our analysis revealed that the medical and education sectors dominate WBL opport
 
 It's important to note that our methodology has limitations. For instance, our current dataset lacks information on the quality of WBL experiences and dimensions of equity, such as whether the programs are paid. This is a significant consideration since many community college students work while enrolled in their courses and may not be able to devote time to an unpaid internship or other WBL program.
 
-Despite these limitations, this exploratory analysis provides a starting point for understanding the prevalence of WBL in community colleges and identifying opportunities for expansion. Future research could build on this work to develop more robust measures of WBL prevalence and to investigate the quality and equity of these opportunities.
+Future research could build on this work to develop more robust measures of WBL prevalence and to investigate the quality and equity of these opportunities.
 
 
 ## Conclusion

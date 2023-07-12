@@ -1,0 +1,297 @@
+---
+title: "A Deep Dive into Course Descriptions. Using Quanteda to Identify Work-Based Learning Opportunities"
+format:
+  docx
+---
+
+```{r}
+#| include: false
+librarian::shelf(glue, gt)
+urbn_gt_theme <- function(data, ...){
+  data %>%
+    opt_row_striping() %>%
+    opt_all_caps() %>%
+    opt_table_font(
+      font = list(
+        gt::google_font("Lato"),
+        default_fonts()))  %>%
+    tab_style(
+      locations = cells_title(groups = "title"),
+      style     = list(
+        cell_text(weight = "bold", size = 24)
+      )
+    ) %>%
+    #Apply different style to the title
+    tab_style(
+      locations = cells_title(groups = "title"),
+      style     = list(
+        cell_text(weight = "bold", size = 24)
+      )
+    ) %>%
+    tab_options(
+      column_labels.border.top.width = px(5),
+      column_labels.border.top.color = "#FFFFFF",
+      table.border.top.color = "#FFFFFF",
+      table.border.bottom.color = "#FFFFFF",
+      heading.background.color = '#1696d2',
+      data_row.padding = px(5),
+      source_notes.font.size = 16 ,
+      heading.align = "center",
+      row_group.background.color = '#D0D3D4',
+      ...)
+}
+
+```
+
+
+## Introduction
+
+In our [previous
+post](https://urban-institute.medium.com/how-web-scraping-powered-our-analysis-of-work-based-learning-opportunities-in-community-colleges-3452320dc345)
+we explored how we gathered course descriptions from community colleges in
+Florida using web scraping techniques. Work-based learning (WBL), which consists
+of opportunities such as internships, apprenticeships, and practicums, focuses
+on career preparation and training in supervised, work-like settings. Community
+colleges, with their career-focused curricula and diverse student populations,
+offer an ideal setting for such opportunities. After successfully compiling a
+comprehensive dataset of course descriptions, the question remained: what is
+the prevalence and nature of WBL opportunities in Florida's
+community colleges as reflected in their course descriptions?
+
+To answer this question, we turned to text analysis, an approach that allows us
+to extract meaningful information from large volumes of text data. Text analysis
+is particularly suited to our research question because it enables us to
+identify and quantify specific keywords related to work-based
+learning, within our data frame of course descriptions. In this post, we'll
+delve into our methodology for analyzing this data using the `quanteda` package
+in R, a powerful tool for quantitative text analysis. All of the code can be viewed in our public [GitHub repository](https://github.com/UI-Research/work-based-learning).
+
+## Getting Started with Quanteda
+
+[Quanteda](https://quanteda.io), short for Quantitative Analysis of Textual
+Data, is a powerful tool for managing and analyzing text data in R. It offers a
+suite of functions for managing a
+[corpus](https://tutorials.quanteda.io/basic-operations/corpus/corpus/)---or a
+collection of texts---such as creating [document-feature
+matrices](https://tutorials.quanteda.io/basic-operations/dfm/), [analyzing
+keywords](https://tutorials.quanteda.io/basic-operations/tokens/kwic/), and
+more. These functions are highly efficient and provide a consistent interface
+with support for multiple languages. While it operates as a standalone package,
+it also integrates seamlessly with extensions such as `readtext`, `spacyr`, and
+`quanteda.textstats`.
+
+To install and load the required packages, we can use the librarian package for
+convenience.
+
+```{r text-}
+librarian::shelf(tidyverse, # data wrangling
+                 quanteda, # text mining
+                 readtext # read texts and associated document-level meta-data
+)
+```
+
+Next, we load our text data containing course descriptions as well as
+document-level metadata using the `readtext::readtext()` function. We then
+perform some additional cleaning steps to standardize variable names and focus
+our analysis on active courses for credit. Here's a brief explanation of each
+column in our courses dataframe:
+
+-   **doc_id**: A unique identifier for each course, constructed by
+    combining the school abbreviation, the course prefix, and the course number.
+    For example, 'BC-THE-2300' refers to a "Survey Of Dramatic Literature" course in the Theatre Arts department at Broward College.
+
+-   **discipline**: The subject area of the
+    course, represented as a code and a description, such as
+    '080 - THEATRE ARTS'.
+
+-   **course_title**: The title of the course.
+
+-   **course_credits**: The number of credit hours that a
+    student receives upon completion of the course.
+
+-   **text**: The course description text that was scraped from
+    the [Florida Department of Education's course catalog
+    website](https://flscns.fldoe.org/Default.aspx). This is the main body of
+    text that we analyze using text mining techniques. 
+
+```{r}
+courses <-
+  readtext(here::here("data/data-intermediate/course-descriptions.csv"), 
+           text_field = "course_description",
+           docid_field = 'course_id') %>% 
+  janitor::clean_names() %>% 
+  filter(course_status == "ACTIVE",
+         type_of_credit == "COLLEGE CREDIT") %>% 
+  select(doc_id, discipline, course_title, course_credits, text) %>%
+  mutate(course_title = str_to_title(course_title),
+         discipline = str_to_title(discipline),
+         text = str_to_sentence(text))
+```
+
+```{r}
+#| echo: false
+courses %>% 
+  slice(1:5) %>% 
+  gt() %>% 
+    opt_interactive(
+    use_resizers = TRUE,
+    use_filters = TRUE,
+    use_compact_mode = TRUE,
+    use_highlight = TRUE,
+    use_search = TRUE,
+    use_text_wrapping = TRUE
+  ) %>%
+    cols_width(
+    doc_id ~ px(150),
+    discipline ~ px(180),
+    course_title ~ px(150),
+    course_credits ~ px(80),
+    text ~ px(350)
+  ) %>% 
+  urbn_gt_theme()
+```
+
+The first step in our analysis is to create a corpus, a collection of text
+documents, from our course descriptions. We can achieve this using the
+`corpus()` function in `quanteda.` 
+```{r}
+corpus <- corpus(courses)
+```
+
+The output of this code is a corpus object that consists of the course
+descriptions from our data frame. The corpus contains metadata about the documents, each of which correspond to a course description. For instance, the first few documents in the corpus look something like this:
+
+```{r}
+#| echo: false
+corpus[1:3]
+```
+
+Each line represents a document in the corpus, with the document ID followed by a snippet of the course description. This corpus will
+serve as the basis for our subsequent text analysis.
+
+Next, we extract the tokens in the
+corpus---usually words, but they can also be [n-grams](https://tutorials.quanteda.io/basic-operations/tokens/tokens_ngrams/) (a collection of successive tokens) or multi-word expressions.
+The tokens function allows us to define what we consider to be a token and apply some
+rules to ignore elements such as punctuation and digits.
+
+```{r}
+tk <- tokens(corpus, what = "word", remove_punct = TRUE, remove_numbers = TRUE)
+```
+
+After tokenizing the corpus, we obtain a list of tokens for each document. In this case, the tokens are the individual words from each course description, stripped of punctuation and numbers.
+
+```{r}
+#| echo: false
+tk[1:3]
+```
+
+## Key-Term Searches with a Dictionary
+
+Our primary interest lies in identifying courses related to different types of WBL such as internships, apprenticeships, or practicums. To do this, we developed a dictionary of key terms in collaboration with subject matter experts from [Urban's Income and Benefits Policy Center](https://www.urban.org/policy-centers/income-and-benefits-policy-center) who specialize in workforce development research. The resulting dictionary used in this analysis is a product of careful curation based on the literature on WBL.
+
+For each type of WBL experience, we created a list of terms that we want to treat equivalently.  For instance, our dictionary specifies that a course description refers to a clinical WBL experience if either of the terms "clinicals" or "clinical experience" appear. This approach allows us to capture the various ways in which a particular type of WBL might be referred to in a course description.
+
+
+```{r}
+dict <-
+  dictionary(list(apprenticeship = "apprentice*",
+                  practicum = c("practicum", "practica"),
+                  coop = c("co-op", "cooperative education", "co-operative education"),
+                  clinicals = c('clinicals', 'clinical experience'),
+                  on_the_job = c("on the job training", "job training", "on-the-job training"),
+                  wbl = c('work-based learning', "work based learning", "wbl"),
+                  real_world_experience = c("real-world experience", "real world experience"),
+                  service_learning = "serive learning",
+                  field_experience = c("fieldwork", "field experience", "field-experience")))
+```
+
+Equipped with our dictionary, we're ready to search for the terms using the
+`kwic()` (key-word in context) function. This function takes in a corpus and a
+dictionary as inputs, along with a window parameter specifying the number of
+tokens before and after a keyword that we want to see for context. The output of this function is a data frame that provides the matching keyword along with its surrounding context in the `pre` and `post` columns, allowing us to understand the use of our key terms within the course descriptions.
+
+```{r}
+keywords <- kwic(corpus, dict, window = 10) %>% as_tibble()
+```
+
+```{r}
+#| echo: false
+keywords %>% 
+  gt() %>% 
+  urbn_gt_theme() %>% 
+  opt_interactive(use_text_wrapping = FALSE, use_resizers = TRUE, use_compact_mode = TRUE) 
+```
+
+
+Finally, we integrate the results from the dictionary-based keyword in-context search back into our course-level data. This process involves merging the keyword data with the original course data and performing a series of data transformations. Specifically, we split the `docname` document identifier into separate `school` and `course` columns, create a `sentence` column that encapsulates the matching keywords along with their context, and perform string manipulations on the `discipline` and `pattern` columns to enhance readability.
+
+```{r}
+courses_with_keywords <-
+  keywords %>% 
+  left_join(courses, by = c("docname" = "doc_id")) %>%
+  separate(docname, into = c("school", "course"), sep = "-", extra = 'merge'  ) %>% 
+  mutate(sentence = glue("{pre} {keyword} {post}") |> str_trim() |> str_to_sentence(),
+         discipline = str_remove(discipline, ".* - "),
+         pattern = str_to_title(pattern) |> str_replace_all('_', '-')) 
+  
+```
+
+```{r}
+#| echo: false
+courses_with_keywords %>% 
+  select(school, discipline, course, course_credits,  sentence, pattern) |>
+  arrange(school, pattern, discipline) %>% 
+  gt() %>% 
+  urbn_gt_theme() %>% 
+  opt_interactive(use_text_wrapping = FALSE, use_resizers = TRUE, use_compact_mode = TRUE) 
+```
+
+Having identified the keywords in the course descriptions, we now turn our attention to quantifying the prevalence of different types of WBL opportunities across schools. To do this, we group our data by school and pattern (which represents the type of WBL opportunity), count the number of occurrences, and then reshape our data so that each type of WBL opportunity becomes a separate column. We also add a 'total' row that sums up the counts across all schools for each type of opportunity.
+
+```{r}
+freq_table <-
+  courses_with_keywords %>%
+  group_by(school, pattern) %>%
+  count() %>%
+  group_by(pattern) %>%
+  bind_rows(summarise(.,
+                      across(where(is.numeric), sum),
+                      across(where(is.character), ~ "total"))) %>% 
+  ungroup() %>%
+  pivot_wider(names_from = pattern, values_from = n) %>%
+  mutate(across(where(is.numeric), ~ replace_na(.x, 0))) %>% 
+  slice(n(), 1:n()-1)
+```
+
+```{r}
+#| echo: false
+freq_table %>%
+  rename_with(~str_to_title(.x), everything()) %>% 
+  gt() %>% 
+  urbn_gt_theme() %>% 
+  tab_header(title = "Frequency of Work-Based Learning Opportunities by School")
+```
+
+## Discussion
+
+
+Our analysis revealed that the medical and education sectors dominate WBL opportunities, which is expected given that these fields often require practical experience for licensure. Clinicals, largely offered in medical and related fields, and field experiences, predominantly in the education sector, were the most common types of WBL identified. However, we also found that apprenticeships, despite their value in career preparation and advancement ([Kuehn, Marotta, et al. 2022](https://www.urban.org/research/publication/beyond-productivity-how-employers-gain-more-apprenticeship)), are one of the least offered forms of WBL.
+
+While our methodology provides valuable insights, it's crucial to acknowledge its limitations. For instance, our current dataset doesn't capture the quality of WBL experiences or equity dimensions, such as whether the programs are paid - a significant factor given the work commitments of many community college students. Additionally, the scope of our analysis is limited by the dictionaries we compiled, the sample of schools considered, and the inherent constraints of course descriptions, which may not fully encapsulate all aspects of a course's content or its WBL opportunities.
+
+## Conclusion
+
+In this post, we've demonstrated how to use `quanteda` to analyze course
+descriptions and identify WBL opportunities in community
+colleges. While our analysis focused on Florida, the same methods could be
+applied to other states or regions. Extending the analysis to other states would provide a broader understanding of WBL opportunities in community colleges across the U.S., informing policy and identifying areas for expansion. This could help establish goals, support programs, and highlight best practices nationwide.
+
+`Quanteda` stands out for its ability to efficiently handle large volumes of text data and intuitive interface. It provides researchers with the flexibility to shape their analysis according to their specific needs, such as identifying key terms, comparing text documents, or investigating text patterns. Given that our study was exploratory in nature, this flexibility was particularly useful. It allowed us to quickly and efficiently examine novel text-data, making `quanteda` an excellent choice for text analysis. It is important to note that the functions used in this analysis only scratch the surface of the full functionality of `quanteda`. To learn more, you can read `quanteda`'s excellent [official tutorial](https://tutorials.quanteda.io) and [documentation](https://quanteda.io). 
+
+Through this analysis, we've gained valuable insights into the prevalence of
+WBL in Florida's community colleges. We hope that our work can
+serve as a foundation for further research and policy discussions on this
+important topic. 
+
+
+*This blog post was co-authored by Manuel Alcalá Kovalski and Judah.*

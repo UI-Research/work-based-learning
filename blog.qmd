@@ -96,21 +96,21 @@ perform some additional cleaning steps to standardize variable names and focus
 our analysis on active courses for credit. Here's a brief explanation of each
 column in our courses dataframe:
 
--   doc_id: A unique identifier for each course, constructed by
+-   **doc_id**: A unique identifier for each course, constructed by
     combining the school abbreviation, the course prefix, and the course number.
     For example, 'BC-THE-2300' refers to a course at the school abbreviated as
     'BC', with the course prefix 'THE', and the course number '2300'.
 
--   discipline: The subject area of the
+-   **discipline**: The subject area of the
     course, represented as a code and a description, such as
     '080 - THEATRE ARTS'.
 
--   course_title: The title of the course.
+-   **course_title**: The title of the course.
 
--   course_credits: The number of credit hours that a
+-   **course_credits**: The number of credit hours that a
     student receives upon completion of the course.
 
--   text: The course description text that was scraped from
+-   **text**: The course description text that was scraped from
     the [Florida Department of Education's course catalog
     website](https://flscns.fldoe.org/Default.aspx). This is the main body of
     text that we analyze using text mining techniques. The text appears to

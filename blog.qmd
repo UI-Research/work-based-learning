@@ -98,8 +98,7 @@ column in our courses dataframe:
 
 -   **doc_id**: A unique identifier for each course, constructed by
     combining the school abbreviation, the course prefix, and the course number.
-    For example, 'BC-THE-2300' refers to a course at the school abbreviated as
-    'BC', with the course prefix 'THE', and the course number '2300'.
+    For example, 'BC-THE-2300' refers to a "Survey Of Dramatic Literature" course in the Theatre Arts department at Broward College.
 
 -   **discipline**: The subject area of the
     course, represented as a code and a description, such as
@@ -113,9 +112,7 @@ column in our courses dataframe:
 -   **text**: The course description text that was scraped from
     the [Florida Department of Education's course catalog
     website](https://flscns.fldoe.org/Default.aspx). This is the main body of
-    text that we analyze using text mining techniques. The text appears to
-    be truncated in the provided data, as indicated by the ellipsis at the end
-    of each string.
+    text that we analyze using text mining techniques. 
 
 ```{r}
 courses <-
@@ -156,41 +153,39 @@ courses %>%
 
 The first step in our analysis is to create a corpus, a collection of text
 documents, from our course descriptions. We can achieve this using the
-`corpus()` function in `quanteda.` Next, we extract the tokens in the
-corpus---usually words, but they can also be [n-grams](https://tutorials.quanteda.io/basic-operations/tokens/tokens_ngrams/) (a collection of successive tokens) or multi-word expressions.
-The tokens function allows us to define what we consider to be a token and apply some
-rules to ignore elements such as punctuation and digits.
-
+`corpus()` function in `quanteda.` 
 ```{r}
 corpus <- corpus(courses)
 ```
 
 The output of this code is a corpus object that consists of the course
-descriptions from our data frame. The corpus contains metadata about the documents, each of which correspond to a
-course description. For
-instance, the first few documents in the corpus look something like this:
+descriptions from our data frame. The corpus contains metadata about the documents, each of which correspond to a course description. For instance, the first few documents in the corpus look something like this:
 
 ```{r}
 #| echo: false
 corpus[1:3]
 ```
 
-Each line represents a document in the corpus, with the document ID (e.g.,
-"BC-THE-2300") followed by a snippet of the course description. This corpus will
+Each line represents a document in the corpus, with the document ID followed by a snippet of the course description. This corpus will
 serve as the basis for our subsequent text analysis.
 
-After tokenizing the corpus, we obtain a list of tokens for each document. In this case, the tokens are the individual words from each course description, stripped of punctuation and numbers.
+Next, we extract the tokens in the
+corpus---usually words, but they can also be [n-grams](https://tutorials.quanteda.io/basic-operations/tokens/tokens_ngrams/) (a collection of successive tokens) or multi-word expressions.
+The tokens function allows us to define what we consider to be a token and apply some
+rules to ignore elements such as punctuation and digits.
+
 ```{r}
 tk <- tokens(corpus, what = "word", remove_punct = TRUE, remove_numbers = TRUE)
 ```
 
-This function returns a list of tokens for each document in the corpus which looks like this:
+After tokenizing the corpus, we obtain a list of tokens for each document. In this case, the tokens are the individual words from each course description, stripped of punctuation and numbers.
+
 ```{r}
 #| echo: false
 tk[1:3]
 ```
 
-Each line represents a document in the corpus, with the document ID (e.g., "BC-THE-2300") followed by a list of tokens extracted from the course description. These tokens will be used for our subsequent text analysis tasks.
+Each line represents a document in the corpus, with the document ID followed by a list of tokens extracted from the course description. These tokens will be used for our subsequent text analysis tasks.
 
 ## Key-Term Searches with a Dictionary
 
